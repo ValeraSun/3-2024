@@ -4,7 +4,6 @@
 typedef long long ll;
 using namespace std;
 ll n, m, s;
-pair< vector<bool>, vector<bool>> answer;
 
 
 ll sum(vector<vector<ll>>& a, vector<bool>& iter_n, vector<bool>& iter_m) {
