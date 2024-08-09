@@ -1,104 +1,100 @@
+
 #include <iostream>
 #include <vector>
-#include <algorithm>
-
+typedef long long ll;
 using namespace std;
+ll n, m, s;
+pair< vector<bool>, vector<bool>> answer;
 
-const int maxn = 15;
-int a[maxn][maxn];
-long long smaskSum[1 << maxn];
-pair<long long, int> dp[1 << maxn][1 << (maxn / 2)];
 
-void solve() {
-    int n, m;
-    cin >> n >> m;
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < m; ++j) {
-            cin >> a[i][j];
-        }
-    }
-    long long s;
-    cin >> s;
-    int half = m / 2;
-    for (int i = 0; i < (1 << n); ++i) {
-        for (int j = 0; j < (1 << half); ++j) {
-            dp[i][j] = { 0, 0 };
-        }
-    }
-    for (int mask = 0; mask < (1 << half); ++mask) {
-        fill(smaskSum, smaskSum + (1 << n), 0);
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < half; ++j) {
-                if ((1 << j) & mask) {
-                    smaskSum[1 << i] += a[i][j];
-                }
-            }
-        }
-        for (int bit = 0; bit < n; ++bit) {
-            for (int mask = 0; mask < (1 << n); ++mask) {
-                if ((1 << bit) & mask) {
-                    smaskSum[mask] += smaskSum[mask ^ (1 << bit)];
-                }
-            }
-        }
-        for (int smask = 0; smask < (1 << n); ++smask) {
-            dp[smask][mask] = make_pair(smaskSum[smask], mask);
-        }
-    }
-    for (int mask = 0; mask < (1 << n); ++mask) {
-        sort(dp[mask], dp[mask] + (1 << half));
-    }
-    for (int mask = 0; mask < (1 << (m - half)); ++mask) {
-        fill(smaskSum, smaskSum + (1 << n), 0);
-        for (int i = 0; i < n; ++i) {
-            for (int j = half; j < m; ++j) {
-                if ((1 << (j - half)) & mask) {
-                    smaskSum[1 << i] += a[i][j];
-                }
-            }
-        }
-        for (int bit = 0; bit < n; ++bit) {
-            for (int mask = 0; mask < (1 << n); ++mask) {
-                if ((1 << bit) & mask) {
-                    smaskSum[mask] += smaskSum[mask ^ (1 << bit)];
-                }
-            }
-        }
-        for (int smask = 0; smask < (1 << n); ++smask) {
-            long long need = s - smaskSum[smask];
-            auto pt = lower_bound(dp[smask], dp[smask] + (1 << half), make_pair(need, -1));
-            if (pt != dp[smask] + (1 << half) && pt->first == need) {
-                cout << "YES\n";
-                int msk = (1 << half) * mask + pt->second;
-                vector<pair<int, int>> res;
-                for (int i = 0; i < n; ++i) {
-                    if (!((1 << i) & smask)) {
-                        res.push_back({ 1, i + 1 });
-                    }
-                }
-                for (int i = 0; i < m; ++i) {
-                    if (!((1 << i) & msk)) {
-                        res.push_back({ 2, i + 1 });
-                    }
-                }
-                cout << res.size() << '\n';
-                for (auto [i, j] : res) {
-                    cout << i << ' ' << j << '\n';
-                }
-                return;
-            }
-        }
-    }
-    cout << "NO\n";
+ll sum(vector<vector<ll>>& a, vector<bool>& iter_n, vector<bool>& iter_m) {
+	ll answer = 0;
+	for (int i = 0; i < n; i++) {
+		if (!iter_n[i]) { continue; }
+		for (int j = 0; j < m; j++) {
+			if (iter_m[j]) {
+				answer += a[i][j];
+			}
+		}
+	}
+	return answer;
+}
+bool  solve(vector<vector<ll>>& a, vector<bool> iter_n, vector<bool> iter_m) {
+	ll sum_a = sum(a, iter_n, iter_m);
+	if (sum_a == s) {
+		cout << "YES" << endl;
+		ll count = 0;
+		for (int i = 0; i < n; i++) {
+			if (!iter_n[i]) { count++; }
+		}
+		for (int j = 0; j < m; j++) {
+			if (!iter_m[j]) { count++; }
+		}
+		cout << count << endl;
+		for (int i = 0; i < n; i++) {
+			if (!iter_n[i]) { cout << 1 << " " << i + 1 << endl; }
+		}
+		for (int j = 0; j < m; j++) {
+			if (!iter_m[j]) { cout << 2 << " " << j + 1 << endl; }
+		}
+		return 1;
+	}
+	if (sum_a < s) { return 0; }
+	int i = 0, j = 0;
+	for (int k = 0; k < n; k++) {
+		if (!iter_n[k]) {
+			i = k + 1;
+			break;
+		}
+	}
+	for (int k = 0; k < m; k++) {
+		if (!iter_m[k]) {
+			j = k + 1;
+			break;
+		}
+	}
+	for (; i < n; i++) {
+		if (iter_n[i]) {
+			iter_n[i] = 0;
+			if (solve(a, iter_n, iter_m)) {
+				return 1;
+			}
+			iter_n[i] = 1;
+		}
+	}
+	for (; j < m; j++) {
+		if (iter_m[j]) {
+			iter_m[j] = 0;
+			if (solve(a, iter_n, iter_m)) {
+				return 1;
+			}
+			iter_m[j] = 1;
+		}
+	}
+	return 0;
 }
 
-int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(0);
-    cout.tie(0);
-    int t;
-    t = 1;
-    while (t--) {
-        solve();
-    }
+int main()
+{
+	cin >> n >> m;
+	vector<vector<ll>> a(n, vector<ll>(m, 0));
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < m; j++) {
+			cin >> a[i][j];
+		}
+	}
+	cin >> s;
+	vector<bool> iter_n(n, 1);
+	vector<bool> iter_m(m, 1);
+	if (!solve(a, iter_n, iter_m)) {
+		cout << "NO";
+	}
+	//for (int i = 0; i < n; i++) {
+	//	cout << answer.first[i] << endl;
+	//}
+	//for (int j = 0; j < m; j++) {
+	//	cout << answer.second[j];
+	//}
+
+
 }
